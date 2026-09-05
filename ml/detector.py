@@ -11,23 +11,7 @@ engine = create_engine(DATABASE_URL)
 
 model = joblib.load("ml/risk_model.joblib")
 
-query = """
-SELECT
-    id,
-    amount,
-    payment_method,
-    status,
-    country,
-    failed_attempts,
-    account_age_days,
-    hour,
-    user_txn_count_1h
-FROM transactions
-"""
-
-df = pd.read_sql(query, engine)
-
-features = [
+FEATURES = [
     "amount",
     "payment_method",
     "status",
@@ -38,37 +22,103 @@ features = [
     "user_txn_count_1h"
 ]
 
-risk_scores = model.predict_proba(df[features])[:, 1]
-predictions = model.predict(df[features])
+MODEL_VERSION = "random_forest_v1"
 
-with engine.begin() as connection:
-    for i in range(len(df)):
+
+def process_transaction(transaction_id):
+    """
+    Run the ML risk detector for one transaction
+    and store/update its risk assessment.
+    """
+
+    query = text("""
+        SELECT
+            id,
+            amount,
+            payment_method,
+            status,
+            country,
+            failed_attempts,
+            account_age_days,
+            hour,
+            user_txn_count_1h
+        FROM transactions
+        WHERE transaction_id = :transaction_id
+    """)
+
+    with engine.connect() as connection:
+        result = connection.execute(
+            query,
+            {"transaction_id": transaction_id}
+        ).mappings().first()
+
+    if not result:
+        raise ValueError(
+            f"Transaction {transaction_id} not found."
+        )
+
+    transaction = dict(result)
+
+    df = pd.DataFrame([transaction])
+
+    risk_score = float(
+        model.predict_proba(df[FEATURES])[:, 1][0]
+    )
+
+    prediction = bool(
+        model.predict(df[FEATURES])[0]
+    )
+
+    risk_level = (
+        "HIGH"
+        if risk_score >= 0.7
+        else "MEDIUM"
+        if risk_score >= 0.3
+        else "LOW"
+    )
+
+    insert_query = text("""
+        INSERT INTO risk_assessments (
+            transaction_id,
+            risk_score,
+            risk_level,
+            model_version
+        )
+        VALUES (
+            :transaction_id,
+            :risk_score,
+            :risk_level,
+            :model_version
+        )
+    """)
+
+    with engine.begin() as connection:
         connection.execute(
-            text("""
-                INSERT INTO risk_assessments (
-                    transaction_id,
-                    risk_score,
-                    risk_level,
-                    model_version
-                )
-                VALUES (
-                    :transaction_id,
-                    :risk_score,
-                    :risk_level,
-                    :model_version
-                )
-            """),
+            insert_query,
             {
-                "transaction_id": int(df.iloc[i]["id"]),
-                "risk_score": float(risk_scores[i]),
-                "risk_level": (
-                    "HIGH" if risk_scores[i] >= 0.7
-                    else "MEDIUM" if risk_scores[i] >= 0.3
-                    else "LOW"
-                ),
-                "model_version": "random_forest_v1"
+                "transaction_id": transaction["id"],
+                "risk_score": risk_score,
+                "risk_level": risk_level,
+                "model_version": MODEL_VERSION
             }
         )
 
-print(f"Processed {len(df)} transactions.")
-print("Risk assessments stored successfully!")
+    return {
+        "transaction_id": transaction_id,
+        "risk_score": round(risk_score, 4),
+        "risk_level": risk_level,
+        "is_suspicious": prediction,
+        "model_version": MODEL_VERSION
+    }
+
+
+if __name__ == "__main__":
+
+    result = process_transaction("TXN00501")
+
+    print("\nML Risk Assessment:")
+    print(f"  Transaction:  {result['transaction_id']}")
+    print(f"  Risk Score:   {result['risk_score']}")
+    print(f"  Risk Level:   {result['risk_level']}")
+    print(f"  Suspicious:   {result['is_suspicious']}")
+    print(f"  Model:        {result['model_version']}")

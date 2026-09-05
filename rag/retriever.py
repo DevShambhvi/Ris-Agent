@@ -1,44 +1,51 @@
-import json
+from rag.db_retriever import search_risk_rules
 
 
-with open("rag/knowledge_base.json", "r") as file:
-    knowledge = json.load(file)
+def search_knowledge(query: str, top_k: int = 3):
+    """
+    Retrieve relevant risk knowledge from PostgreSQL.
+    """
 
+    rules = search_risk_rules(
+        query=query,
+        top_k=top_k
+    )
 
-def search_knowledge(query, top_k=3):
-    query_words = set(query.lower().split())
-
-    results = []
-
-    for item in knowledge:
-        text = (
-            item["title"] + " " +
-            item["category"] + " " +
-            item["content"]
-        ).lower()
-
-        score = 0
-
-        for word in query_words:
-            if word in item["title"].lower():
-                score += 3
-            elif word in item["category"].lower():
-                score += 2
-            elif word in text:
-                score += 1
-
-        if score > 0:
-            results.append((score, item))
-
-    results.sort(key=lambda x: x[0], reverse=True)
-
-    return [item for score, item in results[:top_k]]
+    return [
+        {
+            "id": rule["rule_code"],
+            "title": rule["title"],
+            "category": rule["category"],
+            "content": rule["description"],
+            "severity": rule["severity"],
+            "conditions": rule["conditions"],
+            "recommended_action": rule["recommended_action"]
+        }
+        for rule in rules
+    ]
 
 
 if __name__ == "__main__":
-    results = search_knowledge(
-        "many failed payment attempts"
-    )
 
-    for result in results:
-        print(f"{result['id']}: {result['title']}")
+    queries = [
+        "velocity",
+        "payment failure",
+        "large transaction",
+        "new account",
+        "geographic anomaly"
+    ]
+
+    for query in queries:
+
+        print("\n" + "=" * 60)
+        print(f"Query: {query}")
+        print("=" * 60)
+
+        results = search_knowledge(query)
+
+        for result in results:
+            print(
+                f"{result['id']} | "
+                f"{result['title']} | "
+                f"{result['severity']}"
+            )
