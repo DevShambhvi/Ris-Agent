@@ -2,11 +2,7 @@ from sqlalchemy import text
 
 from .database import engine
 
-
-# ============================================================
 # CREATE USER
-# ============================================================
-
 def create_user(
     name: str,
     email: str
@@ -42,11 +38,7 @@ def create_user(
 
     return dict(result)
 
-
-# ============================================================
 # GET USER
-# ============================================================
-
 def get_user(user_id: int):
 
     query = text("""
@@ -75,11 +67,7 @@ def get_user(user_id: int):
 
     return dict(result)
 
-
-# ============================================================
 # GET ALL USERS
-# ============================================================
-
 def get_users(limit: int = 100):
 
     query = text("""

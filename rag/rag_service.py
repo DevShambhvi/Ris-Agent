@@ -18,10 +18,7 @@ def get_relevant_knowledge(
     and live transaction context from PostgreSQL.
     """
 
-    # --------------------------------------------------
     # 1. Semantic retrieval from ChromaDB
-    # --------------------------------------------------
-
     vector_results = search_vector_store(
         query=query,
         top_k=top_k
@@ -65,10 +62,7 @@ def get_relevant_knowledge(
             )
         })
 
-    # --------------------------------------------------
     # 2. Retrieve live transaction context
-    # --------------------------------------------------
-
     transaction_context = None
 
     if transaction_id:
@@ -79,10 +73,7 @@ def get_relevant_knowledge(
             )
         )
 
-    # --------------------------------------------------
     # 3. Return combined RAG context
-    # --------------------------------------------------
-
     return {
         "risk_rules": risk_rules,
         "transaction_context": transaction_context

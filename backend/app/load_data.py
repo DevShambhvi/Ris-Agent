@@ -1,6 +1,6 @@
-import pandas as pd  # type: ignore[import-not-found]
-from sqlalchemy import create_engine, text  # type: ignore[import-not-found]
-from dotenv import load_dotenv  # type: ignore[import-not-found]
+import pandas as pd  
+from sqlalchemy import create_engine, text  
+from dotenv import load_dotenv  
 import os
 
 # Load .env

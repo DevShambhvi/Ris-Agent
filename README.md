@@ -1,450 +1,544 @@
-# RAZORPAY AI RISK MANAGER
+RIS-Agent — AI Risk Investigation System
 
-AI-powered payment risk investigation and response system for detecting, investigating, and safely responding to suspicious transactions.
+RIS-Agent is an AI-assisted payment risk investigation system designed to detect suspicious transactions, investigate the reasons behind the risk, make controlled decisions, execute safe actions, verify the outcome, and maintain a complete audit trail.
 
-## Overview
+Overview:
 
-Razorpay AI Risk Manager combines machine learning, retrieval-augmented generation (RAG), an AI investigation agent, a deterministic policy engine, and backend APIs into one payment-risk workflow.
+Traditional payment-risk systems often focus mainly on detecting suspicious transactions.
 
-The system does not simply classify a transaction as risky. It investigates **why** the transaction is risky, recommends an action, validates that action against deterministic policies, executes it, verifies the result, and records the complete audit trail.
+RIS-Agent goes one step further by combining Machine Learning, RAG, AI investigation, deterministic policies, backend actions, verification, case management, and auditability into one end-to-end workflow.
 
-### Core Architecture
+Core Workflow
 
-**RAG = the agent's reference book**
-
-**ML = its pattern detector**
-
-**Agent = its investigator**
-
-**Policy Engine = its safety officer**
-
-**Backend = its hands**
-
----
-
-## How It Works
-
-```text
 Transaction
-     │
-     ▼
-ML Risk Detector
-     │
-     │ risk score + detected patterns
-     ▼
+     ↓
+ML Risk Detection
+     ↓
+RAG Knowledge Retrieval
+     ↓
 AI Investigation Agent
-     │
-     ├── Transaction history
-     ├── Risk rules (RAG)
-     └── Evidence
-     │
-     ▼
-Recommended Action
-     │
-     ▼
+     ↓
 Policy Engine
-     │
-     ├── ALLOW
-     ├── REVIEW_TRANSACTION
-     └── BLOCK_TRANSACTION
-     │
-     ▼
-Backend Action
-     │
-     ▼
-Verification
-     │
-     ▼
-Audit Log + Case
-```
+     ↓
+Action Execution
+     ↓
+Action Verification
+     ↓
+Case Management + Audit Trail
 
----
+The system is designed around a simple principle:
 
-## Main Components
+AI investigates and recommends; deterministic policies authorize; the backend executes; verification confirms the result.
 
-### 1. Transaction Simulator
+Architecture: 
 
-Generates realistic payment activity for testing and demonstration.
+ML — Pattern Detector
 
-The simulator can produce normal and suspicious transactions involving patterns such as:
+Analyzes transaction features and generates a risk score.
 
-* High transaction amount
-* Multiple failed attempts
-* New accounts
-* High transaction velocity
-* Combined suspicious behavior
+RAG — Reference Book
 
-The simulator can generate **10,000 payment events** for demonstration workloads.
+Retrieves relevant payment-risk rules and knowledge for the investigation.
 
-### 2. ML Risk Detector
+AI Agent — Investigator
 
-A Random Forest model evaluates transaction-level risk using behavioral and transaction features.
+Combines transaction context with retrieved risk knowledge, identifies relevant evidence, and recommends an action.
 
-Example features include:
+Policy Engine — Safety Officer
 
-* Transaction amount
-* Failed attempts
-* Account age
-* Transaction hour
-* User transaction count in the last hour
-* Payment method
-* Country
-* Device and IP information
+Validates the agent's recommendation against deterministic rules and risk thresholds.
 
-The detector produces:
+Backend — Hands
 
-```text
-Risk Score
-Risk Level
-Detected Patterns
-Model Version
-```
+Executes the approved action and verifies the resulting transaction state.
 
-### 3. RAG Knowledge Base
+-Key Features: 
 
-The RAG layer provides the investigation agent with relevant risk rules and operational knowledge.
+Machine learning-based transaction risk scoring
 
-Rules include:
+Suspicious transaction detection
 
-* Velocity anomalies
-* High-value transactions
-* New-account activity
-* Failed-payment patterns
-* Geographic anomalies
+RAG-based risk knowledge retrieval
 
-The RAG layer is used as **investigative evidence**, not as the final authority for executing financial actions.
+AI-assisted transaction investigation
 
-### 4. AI Investigation Agent
+Evidence-based risk analysis
 
-The agent combines:
+Deterministic policy validation
 
-* Transaction data
-* ML risk signals
-* Retrieved risk rules
-* Historical evidence
+Safe transaction actions
 
-It produces:
+Post-action verification
 
-```text
-Investigation
-Evidence
-Risk Reasoning
-Recommended Action
-Investigation Status
-```
+Automated case creation and management
 
-### 5. Policy Engine
+Complete audit trail
 
-The policy engine is deterministic and acts as the safety boundary.
+PostgreSQL persistent storage
 
-The AI agent may recommend an action, but the policy engine decides whether that action is allowed.
+Interactive Streamlit dashboard
 
-Supported actions:
+Live end-to-end transaction investigation
 
-```text
+Normal and high-risk demo scenarios
+
+ML Model: 
+
+The system uses a Random Forest classifier named random_forest_v1.
+
+The model classifies transactions as:
+
+0 → Normal
+1 → Suspicious
+
+Dataset
+
+Total transactions:       500
+Training transactions:    400
+Testing transactions:     100
+Original features:          8
+Encoded features:          15
+
+Model Performance
+
+Test Accuracy: 94%
+
+Class
+
+Precision
+
+Recall
+
+F1-Score
+
+Support
+
+Normal
+
+0.95
+
+0.97
+
+0.96
+
+79
+
+Suspicious
+
+0.89
+
+0.81
+
+0.85
+
+21
+
+Overall
+
+0.94
+
+0.94
+
+0.94
+
+100
+
+Confusion Matrix
+
+                 Predicted
+                 Normal  Suspicious
+
+Actual Normal       77       2
+Actual Suspicious    4      17
+
+RAG Knowledge Base:
+
+Current payment-risk rules:
+
+RISK-001 → High Transaction Velocity
+RISK-002 → Repeated Payment Failures
+RISK-003 → Unusually High Transaction Amount
+RISK-004 → New Account Activity
+RISK-005 → Geographic Anomaly
+
+The system distinguishes between retrieved knowledge and detected evidence. A retrieved rule is not automatically treated as confirmed evidence unless the transaction data supports that risk signal.
+
+AI Investigation:
+
+When a suspicious transaction is detected, the investigation agent:
+
+Retrieves relevant risk knowledge.
+
+Examines the transaction context.
+
+Identifies supported risk signals.
+
+Determines the risk level.
+
+Recommends an appropriate action.
+
+Passes the recommendation to the policy engine.
+
+Example:
+
+Transaction
+    ↓
+Risk Score = 0.865
+    ↓
+HIGH RISK
+    ↓
+RAG retrieves relevant rules
+    ↓
+Agent identifies 4 supported risk signals
+    ↓
+Recommendation: BLOCK_TRANSACTION
+
+Policy Engine:
+
+The AI agent does not directly control transaction actions.
+
+Risk Thresholds
+
+HIGH_RISK_THRESHOLD = 0.70
+BLOCK_THRESHOLD      = 0.85
+
+Supported Actions
+
 ALLOW
 REVIEW_TRANSACTION
 BLOCK_TRANSACTION
-```
 
-Current blocking threshold:
+Example:
 
-```text
-Risk Score >= 0.85
-```
+Risk Score = 0.865
 
-### 6. Backend
+0.865 >= 0.85
+        ↓
+BLOCK_TRANSACTION allowed
 
-FastAPI provides the system APIs for:
+This provides a safety layer between AI reasoning and real transaction actions.
 
-* Transactions
-* Risk assessments
-* Investigations
-* Actions
-* Cases
-* Audit logs
-* Dashboard statistics
+Action Execution & Verification:
 
-### 7. Dashboard
+After executing an action, the system checks the resulting transaction state.
 
-The dashboard provides visibility into:
-
-* Risk overview
-* Transactions
-* Investigations
-* Cases
-* Audit trail
-* Live demonstrations
-
----
-
-## Safety Model
-
-The system follows a controlled decision pipeline:
-
-```text
-Detect
-  ↓
-Investigate
-  ↓
-Recommend
-  ↓
-Validate
-  ↓
-Execute
-  ↓
-Verify
-  ↓
-Audit
-```
-
-The AI agent does **not** directly execute financial actions.
-
-Every action passes through the deterministic policy engine.
-
-This provides:
-
-* Bounded actions
-* Explainability
-* Verification
-* Auditability
-* Failure handling
-
----
-
-## Example Investigation
-
-A highly suspicious transaction may produce:
-
-```text
-Transaction:
-Amount: ₹50,000
-Failed Attempts: 10
-Account Age: 1 day
-Transactions in 1 hour: 30
-Transaction Hour: 03:00
-
-ML:
-Risk Score: 0.865
-Risk Level: HIGH
-
-Investigation:
-Evidence Found: 4
-Rules Retrieved: 5
-
-Agent:
-Recommended Action: BLOCK_TRANSACTION
-
-Policy:
+Agent Recommendation
+        ↓
+BLOCK_TRANSACTION
+        ↓
+Policy
+        ↓
 APPROVED
-
-Execution:
+        ↓
+Backend
+        ↓
 BLOCKED
-
-Verification:
+        ↓
+Verification
+        ↓
 VERIFIED
 
-Case:
-CRITICAL / OPEN
-```
+Example:
 
-The complete sequence is recorded in the audit trail.
+Expected Status: BLOCKED
+Actual Status:   BLOCKED
 
----
+Verification: VERIFIED
 
-## Technology Stack
+Example High-Risk Investigation:
 
-| Layer               | Technology        |
-| ------------------- | ----------------- |
-| Backend             | FastAPI           |
-| Database            | PostgreSQL        |
-| ORM/Database Access | SQLAlchemy        |
-| ML                  | Scikit-learn      |
-| Model               | Random Forest     |
-| RAG                 | ChromaDB          |
-| AI Agent            | Python            |
-| Validation          | Pydantic          |
-| Dashboard           | Streamlit         |
-| API Testing         | Swagger / OpenAPI |
-| Version Control     | Git + GitHub      |
+Example suspicious transaction:
 
----
+Amount:              ₹50,000
+Payment Method:      CARD
+Failed Attempts:     10
+Account Age:         1 day
+Transaction Hour:    3 AM
+Transactions / 1h:   30
 
-## Project Structure
+Example result:
 
-```text
+Risk Score:        0.865
+Risk Level:        HIGH
+Detected Signals:  4
+RAG Rules:         5 retrieved
+Recommendation:    BLOCK_TRANSACTION
+Policy:            APPROVED
+Action:             BLOCKED
+Verification:      VERIFIED
+Case Priority:     CRITICAL
+Case Status:       OPEN
+
+Normal Transaction Scenario: 
+
+The system can also allow normal transactions:
+
+Normal Transaction
+        ↓
+ML Risk Detection
+        ↓
+LOW RISK
+        ↓
+ALLOW
+        ↓
+SUCCESS
+
+Dashboard: 
+
+The Streamlit dashboard provides:
+
+Overview — system and risk statistics
+
+Transactions — transaction-level risk information
+
+Investigations — ML, RAG, agent, policy, and action results
+
+Cases — investigation case management
+
+Audit Trail — complete system activity history
+
+Live Demo — create and investigate transactions in real time
+
+Database:
+
+RIS-Agent uses PostgreSQL for persistent storage.
+
+Main tables:
+
+users
+transactions
+risk_assessments
+risk_rules
+policy_decisions
+cases
+audit_logs
+
+This allows transactions, risk assessments, investigations, policy decisions, cases, and actions to remain available after the live demo.
+
+Audit Trail:
+
+Important stages of the risk workflow are recorded for traceability:
+
+Transaction
+     ↓
+Risk Assessment
+     ↓
+Investigation
+     ↓
+Policy Decision
+     ↓
+Action
+     ↓
+Action Verification
+
+The audit trail helps answer:
+
+Why was this transaction blocked?
+
+Project Structure:
+
 Ris-Agent/
 │
 ├── agent/
 │   └── investigator.py
 │
 ├── backend/
-│   ├── app/
-│   │   ├── main.py
-│   │   ├── actions.py
-│   │   ├── audit.py
-│   │   ├── cases.py
-│   │   └── users.py
-│   └── Requirements.txt
+│   └── app/
+│       └── main.py
 │
 ├── database/
 │   └── schema.sql
 │
-├── dashboard/
-│   └── app.py
-│
 ├── ml/
-│   ├── detector.py
 │   ├── train_model.py
-│   └── model/
+│   ├── predict.py
+│   └── detector.py
 │
 ├── policy/
-│   ├── policy_engine.py
-│   └── rules.py
+│   ├── rules.py
+│   └── policy_engine.py
 │
 ├── rag/
-│   ├── db_retriever.py
-│   ├── transaction_retriever.py
+│   ├── rag_service.py
 │   ├── retriever.py
-│   ├── services.py
-│   └── vector_store.py
+│   └── knowledge_base.py
 │
 ├── simulator/
-│   └── simulator.py
-│
-├── data/
+│   └── ...
 │
 ├── tests/
+│   └── ...
 │
-├── .env.example
-├── .gitignore
-└── README.md
-```
+├── risk_transactions_500.csv
+├── app.py
+├── README.md
+└── .env.example
 
----
+⚙️ Technology Stack
 
-## Running the Project
+Technology
 
-### 1. Clone the repository
+Purpose
 
-```bash
+Python
+
+Core development
+
+FastAPI
+
+Backend APIs
+
+Streamlit
+
+Interactive dashboard
+
+PostgreSQL
+
+Persistent database
+
+SQLAlchemy
+
+Database interaction
+
+Scikit-learn
+
+Machine Learning
+
+Random Forest
+
+Risk classification
+
+RAG
+
+Risk knowledge retrieval
+
+ChromaDB
+
+Vector knowledge storage
+
+Pydantic
+
+Data validation
+
+Pandas
+
+Data processing
+
+Plotly
+
+Dashboard visualization
+
+Running the Project: 
+
+1. Clone the repository
+
 git clone https://github.com/DevShambhvi/Ris-Agent.git
 cd Ris-Agent
-```
 
-### 2. Create the virtual environment
+2. Create the virtual environment
 
-```bash
 python -m venv venv
+
+3. Activate the virtual environment
+
+Git Bash
+
 source venv/Scripts/activate
-```
 
-### 3. Install dependencies
+Windows CMD
 
-```bash
-pip install -r backend/Requirements.txt
-```
+venv\Scripts\activate
 
-### 4. Configure environment variables
+4. Install dependencies
 
-Create a `.env` file using `.env.example` as the template.
+pip install -r requirements.txt
 
-Add the required PostgreSQL and AI configuration values.
+5. Configure environment variables
 
-### 5. Set up PostgreSQL
+Create a .env file based on:
 
-Create the project database and execute:
+.env.example
 
-```text
+6. Configure PostgreSQL
+
+Create the required PostgreSQL database and apply:
+
 database/schema.sql
-```
 
-### 6. Start the FastAPI backend
+7. Start the FastAPI backend
 
-```bash
-uvicorn backend.app.main:app --reload
-```
+python -m backend.app.main
 
-The API will be available through the FastAPI server.
+8. Start the Streamlit dashboard
 
-Interactive API documentation is available at:
+Open another terminal with the virtual environment activated:
 
-```text
-/docs
-```
+streamlit run app.py
 
-### 7. Start the dashboard
+The dashboard will be available at:
 
-```bash
-streamlit run dashboard/app.py
-```
+http://localhost:8501
 
----
+Testing:
 
-## Demonstration Flow
+Run the automated tests:
 
-The intended demonstration is:
+pytest -q
 
-```text
-10,000 simulated payment events
-            ↓
-Suspicious transaction detected
-            ↓
-ML risk score generated
-            ↓
-AI investigates the transaction
-            ↓
-Relevant risk rules retrieved
-            ↓
-Action recommended
-            ↓
-Policy validates action
-            ↓
-Backend executes action
-            ↓
-Result verified
-            ↓
-Case + audit trail created
-```
+Project Objective:
 
-This demonstrates an end-to-end **detect → investigate → decide → act → verify → audit** payment-risk workflow.
+The objective of RIS-Agent is to build a payment-risk system that does more than simply flag suspicious transactions.
 
----
+It combines:
 
-## Important Design Principle
+Detection
+    +
+Investigation
+    +
+Decision Making
+    +
+Safe Execution
+    +
+Verification
+    +
+Auditability
 
-The AI is responsible for **reasoning and investigation**.
+into one end-to-end workflow.
 
-The deterministic policy engine is responsible for **authorization**.
+The system demonstrates how AI can assist with payment-risk investigations while keeping transaction actions bounded by deterministic policies and verified backend execution.
 
-The backend is responsible for **execution**.
+Future Improvements:
 
-This separation prevents the AI from having unrestricted control over financial actions.
+Larger real-world transaction datasets
 
----
+More advanced behavioral and temporal features
 
-## Project Status
+Historical geographic anomaly detection
 
-Core system implemented:
+Model monitoring and drift detection
 
-* [x] PostgreSQL database
-* [x] Transaction simulator
-* [x] Random Forest risk detector
-* [x] RAG knowledge base
-* [x] AI investigation agent
-* [x] Deterministic policy engine
-* [x] Transaction actions
-* [x] Action verification
-* [x] Case management
-* [x] Audit logging
-* [x] FastAPI backend
-* [x] Streamlit dashboard
-* [x] End-to-end investigation workflow
+Additional risk rules
 
----
+More configurable policy rules
 
-## Built For
+Human-in-the-loop investigation workflows
 
-**Razorpay Buildathon 2026**
+Production-scale deployment
 
-Track 02 — AI Risk Manager
+Advanced agent reasoning
+
+Real-time payment gateway integration
+
+Project: 
+
+RIS-Agent — AI Risk Investigation System
+
+Built for the Razorpay Buildathon 2026.
+
+ML → Detect
+RAG → Retrieve
+Agent → Investigate
+Policy → Authorize
+Backend → Execute
+Verification → Confirm
+Audit → Explain

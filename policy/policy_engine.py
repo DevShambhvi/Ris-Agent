@@ -6,19 +6,12 @@ from policy.rules import (
     POLICY_VERSION,
 )
 
-
-# ============================================================
-# Policy Evaluation
-# ============================================================
-
+# POLICY EVALUATION 
 def evaluate_policy(
     risk_score,
     recommended_action
 ):
     """
-    Deterministic safety gate for transaction actions.
-
-    The AI investigator recommends an action.
     This policy engine independently validates whether
     that action is permitted for the given risk score.
 
@@ -37,10 +30,7 @@ def evaluate_policy(
     on the AI investigator's reasoning.
     """
 
-    # --------------------------------------------------------
     # Normalize risk score
-    # --------------------------------------------------------
-
     try:
         risk_score = float(risk_score)
 
@@ -52,18 +42,12 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # --------------------------------------------------------
     # Normalize action
-    # --------------------------------------------------------
-
     recommended_action = str(
         recommended_action
     ).upper().strip()
 
-    # --------------------------------------------------------
     # Validate risk score
-    # --------------------------------------------------------
-
     if not 0.0 <= risk_score <= 1.0:
 
         return {
@@ -74,10 +58,7 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # --------------------------------------------------------
     # Validate requested action
-    # --------------------------------------------------------
-
     if recommended_action not in ALLOWED_ACTIONS:
 
         return {
@@ -89,10 +70,7 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # ========================================================
     # ALLOW
-    # ========================================================
-
     if recommended_action == "ALLOW":
 
         if risk_score < HIGH_RISK_THRESHOLD:
@@ -114,10 +92,7 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # ========================================================
     # REVIEW
-    # ========================================================
-
     if recommended_action == "REVIEW_TRANSACTION":
 
         if risk_score >= MIN_REVIEW_RISK_SCORE:
@@ -140,10 +115,7 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # ========================================================
     # BLOCK
-    # ========================================================
-
     if recommended_action == "BLOCK_TRANSACTION":
 
         if risk_score >= MIN_BLOCK_RISK_SCORE:
@@ -166,10 +138,7 @@ def evaluate_policy(
             "policy_version": POLICY_VERSION
         }
 
-    # --------------------------------------------------------
     # Defensive fallback
-    # --------------------------------------------------------
-
     return {
         "policy_result": "REJECTED",
         "reason": "No applicable policy rule.",

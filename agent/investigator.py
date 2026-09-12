@@ -8,15 +8,10 @@ from backend.app.audit import create_audit_log
 
 from importlib import import_module
 
-# Load SQLAlchemy dynamically so static analysis does not require its optional
-# type stubs in this module.
+# Load SQLAlchemy dynamically so static analysis does not require its optional type stubs in this module.
 text = import_module("sqlalchemy").text
 
-
-# ============================================================
-# Get Transaction + Latest Risk Assessment
-# ============================================================
-
+# GET TRANSACTION + LATEST RISK ASSESSMENT
 def get_transaction(transaction_id):
 
     query = text("""
@@ -67,21 +62,14 @@ def get_transaction(transaction_id):
 
     return dict(result)
 
-
-# ============================================================
-# Determine Agent Recommendation
-# ============================================================
-
+# AGENT RECOMMENDATION
 def determine_recommendation(
     risk_score,
     evidence,
     transaction
 ):
 
-    # --------------------------------------------------------
     # Count extreme contextual signals
-    # --------------------------------------------------------
-
     extreme_signals = 0
 
     if transaction["amount"] >= 10000:
@@ -96,39 +84,23 @@ def determine_recommendation(
     if transaction["account_age_days"] <= 7:
         extreme_signals += 1
 
-    # --------------------------------------------------------
     # BLOCK when high ML risk is combined with
     # multiple extreme transaction signals.
-    # --------------------------------------------------------
-
     if risk_score >= 0.80 and extreme_signals >= 2:
         return "BLOCK_TRANSACTION"
 
-    # --------------------------------------------------------
     # High ML risk fallback
-    # --------------------------------------------------------
-
     if risk_score >= 0.90:
         return "BLOCK_TRANSACTION"
 
-    # --------------------------------------------------------
     # Medium/high risk → manual review
-    # --------------------------------------------------------
-
     if risk_score >= 0.70:
         return "REVIEW_TRANSACTION"
 
-    # --------------------------------------------------------
     # Otherwise allow
-    # --------------------------------------------------------
-
     return "ALLOW"
 
-
-# ============================================================
-# Evaluate RAG Evidence Against Transaction
-# ============================================================
-
+# EVALUATE RAG EVIDENCE AGAINST TRANSACTION
 def evaluate_evidence(transaction, risk_rules):
 
     evidence = []
@@ -139,10 +111,7 @@ def evaluate_evidence(transaction, risk_rules):
         if rule.get("id")
     }
 
-    # --------------------------------------------------------
     # Helper for adding evidence consistently
-    # --------------------------------------------------------
-
     def add_evidence(rule_id):
 
         rule = rules_by_id.get(rule_id)
@@ -174,53 +143,25 @@ def evaluate_evidence(transaction, risk_rules):
             )
         })
 
-    # --------------------------------------------------------
-    # RISK-001: High Transaction Velocity
-    # --------------------------------------------------------
-
     if transaction["user_txn_count_1h"] >= 5:
 
         add_evidence("RISK-001")
-
-    # --------------------------------------------------------
-    # RISK-002: Repeated Payment Failures
-    # --------------------------------------------------------
 
     if transaction["failed_attempts"] >= 3:
 
         add_evidence("RISK-002")
 
-    # --------------------------------------------------------
-    # RISK-003: Unusually High Transaction Amount
-    # --------------------------------------------------------
-
     if transaction["amount"] >= 3000:
 
         add_evidence("RISK-003")
-
-    # --------------------------------------------------------
-    # RISK-004: New Account Activity
-    # --------------------------------------------------------
 
     if transaction["account_age_days"] <= 30:
 
         add_evidence("RISK-004")
 
-    # --------------------------------------------------------
-    # RISK-005: Geographic Anomaly
-    #
-    # Retrieval of a geographic rule is not sufficient proof
-    # of an anomaly. Historical location comparison is
-    # required before this becomes transaction evidence.
-    # --------------------------------------------------------
-
     return evidence
 
-
-# ============================================================
-# Build Investigation Result
-# ============================================================
-
+# BUILD INVESTIGATION RESULTS
 def build_investigation_result(
     transaction,
     risk_score,
@@ -281,17 +222,10 @@ def build_investigation_result(
         "investigation_status": "COMPLETED"
     }
 
-
-# ============================================================
-# Main Investigation
-# ============================================================
-
+# INVESTIGATION
 def investigate(transaction_id):
 
-    # --------------------------------------------------------
     # 1. Retrieve transaction + ML assessment
-    # --------------------------------------------------------
-
     transaction = get_transaction(
         transaction_id
     )
@@ -320,10 +254,7 @@ def investigate(transaction_id):
         transaction["risk_score"]
     )
 
-    # --------------------------------------------------------
-    # 2. Build RAG investigation query
-    # --------------------------------------------------------
-
+    # 2. RAG Query 
     rag_query = (
         f"large payment of {transaction['amount']} "
         f"with {transaction['failed_attempts']} failed "
@@ -333,10 +264,7 @@ def investigate(transaction_id):
         f"account age {transaction['account_age_days']} days"
     )
 
-    # --------------------------------------------------------
     # 3. Retrieve semantic rules + transaction context
-    # --------------------------------------------------------
-
     try:
 
         rag_result = get_relevant_knowledge(
@@ -377,31 +305,22 @@ def investigate(transaction_id):
         "transaction_context"
     )
 
-    # --------------------------------------------------------
     # 4. Evaluate evidence
-    # --------------------------------------------------------
-
     evidence = evaluate_evidence(
         transaction,
         risk_rules
     )
 
-    # --------------------------------------------------------
     # 5. Agent recommendation
-    # --------------------------------------------------------
-
     recommendation = determine_recommendation(
         risk_score,
         evidence,
         transaction
     )
 
-    # --------------------------------------------------------
     # 6. Policy evaluation
-    #
     # The AI recommends.
     # The deterministic policy engine decides.
-    # --------------------------------------------------------
 
     try:
 
@@ -422,10 +341,7 @@ def investigate(transaction_id):
             "transaction_id": transaction_id
         }
 
-    # --------------------------------------------------------
     # 7. Build investigation result
-    # --------------------------------------------------------
-
     investigation_result = build_investigation_result(
         transaction=transaction,
         risk_score=risk_score,
@@ -435,10 +351,7 @@ def investigate(transaction_id):
         recommendation=recommendation
     )
 
-    # ========================================================
     # CASE MANAGEMENT
-    # ========================================================
-
     case = None
 
     if recommendation in [
@@ -476,10 +389,7 @@ def investigate(transaction_id):
                 summary
             )
 
-    # ========================================================
     # AUDIT: INVESTIGATION COMPLETED
-    # ========================================================
-
     if case:
 
         create_audit_log(
@@ -524,10 +434,7 @@ def investigate(transaction_id):
             }
         )
 
-    # ========================================================
     # AUDIT: POLICY DECISION
-    # ========================================================
-
     if case:
 
         create_audit_log(
@@ -572,9 +479,7 @@ def investigate(transaction_id):
             }
         )
 
-    # ========================================================
     # EXECUTE APPROVED ACTION
-    # ========================================================
 
     action_result = None
 
@@ -592,9 +497,7 @@ def investigate(transaction_id):
 
         except Exception as error:
 
-            # ------------------------------------------------
             # Action execution failed
-            # ------------------------------------------------
 
             if case:
 
@@ -645,9 +548,7 @@ def investigate(transaction_id):
                 "action_result": None
             }
 
-        # ----------------------------------------------------
         # Audit executed action
-        # ----------------------------------------------------
 
         if case:
 
@@ -677,10 +578,7 @@ def investigate(transaction_id):
                 }
             )
 
-        # ====================================================
         # ACTION VERIFICATION
-        # ====================================================
-
         verified = action_result.get(
             "verified",
             False
@@ -729,10 +627,7 @@ def investigate(transaction_id):
 
         else:
 
-            # ------------------------------------------------
             # Verification failed
-            # ------------------------------------------------
-
             if case:
 
                 create_audit_log(
@@ -783,13 +678,11 @@ def investigate(transaction_id):
                     }
                 )
 
-            # --------------------------------------------
             # Important:
             # The action technically executed, but the
             # resulting database state could not be
             # verified successfully.
-            # --------------------------------------------
-
+        
             return {
                 "success": False,
 
@@ -817,10 +710,7 @@ def investigate(transaction_id):
 
     else:
 
-        # ====================================================
         # POLICY REJECTED ACTION
-        # ====================================================
-
         if case:
 
             create_audit_log(
@@ -852,10 +742,7 @@ def investigate(transaction_id):
                 }
             )
 
-    # ========================================================
-    # Final Result
-    # ========================================================
-
+    # FINAL RESULT
     return {
 
         "success": True,
@@ -873,10 +760,6 @@ def investigate(transaction_id):
         "action_result": action_result
     }
 
-
-# ============================================================
-# Manual Test
-# ============================================================
 
 if __name__ == "__main__":
 

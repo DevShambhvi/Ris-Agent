@@ -1,8 +1,8 @@
 import os
 
-from dotenv import load_dotenv  # type: ignore[reportMissingImports]
-from sqlalchemy import create_engine  # type: ignore[reportMissingImports]
-from sqlalchemy.orm import sessionmaker  # type: ignore[reportMissingImports]
+from dotenv import load_dotenv  
+from sqlalchemy import create_engine  
+from sqlalchemy.orm import sessionmaker  
 
 load_dotenv()
 

@@ -5,10 +5,8 @@ import requests
 import streamlit as st
 from datetime import datetime
 
-
-# ============================================================
 # CONFIG
-# ============================================================
+
 
 API_BASE = "http://127.0.0.1:8000"
 PAGE_TITLE = "RIS-Agent | AI Risk Intelligence"
@@ -20,10 +18,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# ============================================================
 # CSS
-# ============================================================
 
 st.markdown(
     """
@@ -145,10 +140,8 @@ st.markdown(
 )
 
 
-# ============================================================
-# API HELPERS
-# ============================================================
 
+# API HELPERS
 def api_get(path, params=None, timeout=8):
 
     try:
@@ -294,9 +287,8 @@ def human_details(details):
     return str(details)
 
 
-# ============================================================
+
 # RESPONSE SAFETY HELPERS
-# ============================================================
 
 def normalize_investigation(data):
 
@@ -469,11 +461,7 @@ def is_action_verified(action_result):
         or verification_status == "VERIFIED"
     )
 
-
-# ============================================================
 # DISPLAY DATAFRAME SAFETY
-# ============================================================
-
 def make_display_safe(df):
 
     if df is None or df.empty:
@@ -494,11 +482,7 @@ def make_display_safe(df):
 
     return result
 
-
-# ============================================================
 # DATA LOADERS
-# ============================================================
-
 @st.cache_data(ttl=4)
 def load_transactions():
 
@@ -675,11 +659,7 @@ def get_case_for_transaction(transaction_id):
         f"/transactions/{transaction_id}/case"
     )
 
-
-# ============================================================
 # PLOTLY THEME
-# ============================================================
-
 PLOT_BG = "rgba(0,0,0,0)"
 PLOT_PAPER = "rgba(0,0,0,0)"
 FONT_COLOR = "#dce7f5"
@@ -721,11 +701,7 @@ def style_fig(fig, height=330):
 
     return fig
 
-
-# ============================================================
 # SIDEBAR
-# ============================================================
-
 with st.sidebar:
 
     st.title(
@@ -804,11 +780,7 @@ with st.sidebar:
         "ML → RAG → Agent → Policy"
     )
 
-
-# ============================================================
 # LOAD COMMON DATA
-# ============================================================
-
 transactions_df = load_transactions()
 cases_df = load_cases()
 audit_df = load_audit()
@@ -851,11 +823,7 @@ if not transactions_df.empty:
         .str.upper()
     )
 
-
-# ============================================================
 # HEADER
-# ============================================================
-
 header_left, header_right = st.columns(
     [4, 1]
 )
@@ -882,11 +850,7 @@ with header_right:
         "ML + RAG + AGENT",
     )
 
-
-# ============================================================
 # OVERVIEW
-# ============================================================
-
 if page == "Overview":
 
     total = len(
@@ -1446,11 +1410,7 @@ if page == "Overview":
                 "No risk events available."
             )
 
-
-# ============================================================
 # TRANSACTIONS
-# ============================================================
-
 elif page == "Transactions":
 
     st.subheader(
@@ -1928,11 +1888,7 @@ elif page == "Transactions":
                 clear_data_cache()
                 st.rerun()
 
-
-# ============================================================
 # INVESTIGATIONS
-# ============================================================
-
 elif page == "Investigations":
 
     st.subheader(
@@ -2682,11 +2638,7 @@ elif page == "Investigations":
             investigation_result
         )
 
-
-# ============================================================
 # CASES
-# ============================================================
-
 elif page == "Cases":
 
     st.subheader(
@@ -2859,11 +2811,7 @@ elif page == "Cases":
                     "Case is resolved."
                 )
 
-
-# ============================================================
 # AUDIT TRAIL
-# ============================================================
-
 elif page == "Audit Trail":
 
     st.subheader(
@@ -2965,11 +2913,7 @@ elif page == "Audit Trail":
             use_container_width=True,
         )
 
-
-# ============================================================
 # LIVE DEMO
-# ============================================================
-
 elif page == "Live Demo":
 
     st.subheader(
@@ -2986,10 +2930,7 @@ elif page == "Live Demo":
         "Use it for the buildathon demo."
     )
 
-    # --------------------------------------------------------
-    # USER SELECTION
-    # --------------------------------------------------------
-
+    # User Selection
     if users_df.empty:
 
         st.error(
@@ -3149,10 +3090,7 @@ elif page == "Live Demo":
             use_container_width=True,
         )
 
-    # --------------------------------------------------------
-    # EXECUTE PIPELINE
-    # --------------------------------------------------------
-
+    # Execute Pipeline
     if submitted:
 
         timestamp = datetime.now()
@@ -3201,10 +3139,7 @@ elif page == "Live Demo":
 
         else:
 
-            # ------------------------------------------------
-            # BACKEND RESPONSE
-            # ------------------------------------------------
-
+            # Backend Response 
             tx_result = get_transaction_result(
                 result
             )
@@ -3247,10 +3182,7 @@ elif page == "Live Demo":
                 result
             )
 
-            # ------------------------------------------------
-            # FALLBACK RISK INFORMATION
-            # ------------------------------------------------
-
+            # Fallback Risk Information
             if not risk_result:
 
                 risk_result = {
@@ -3283,10 +3215,7 @@ elif page == "Live Demo":
                 f"{actual_transaction_id}"
             )
 
-            # ------------------------------------------------
-            # TOP METRICS
-            # ------------------------------------------------
-
+            # Top Metrics
             st.divider()
 
             a, b, c, d = st.columns(4)
@@ -3342,10 +3271,7 @@ elif page == "Live Demo":
                 ),
             )
 
-            # ------------------------------------------------
-            # PIPELINE
-            # ------------------------------------------------
-
+            # Pipeline 
             st.write("")
 
             st.subheader(
@@ -3407,10 +3333,7 @@ elif page == "Live Demo":
                         desc
                     )
 
-            # ------------------------------------------------
-            # AGENT + POLICY
-            # ------------------------------------------------
-
+            # Agent + Policy
             st.divider()
 
             left, right = st.columns(
@@ -3501,9 +3424,7 @@ elif page == "Live Demo":
                     )
 
                 # ------------------------------------------------
-                # RAG RULES
-                # ------------------------------------------------
-
+                # RAG Rules
                 retrieved_rules = investigation.get(
                     "retrieved_rules",
                     [],
@@ -3647,10 +3568,7 @@ elif page == "Live Demo":
                             ),
                         )
 
-                    # ------------------------------------------------
-                    # ROBUST VERIFICATION
-                    # ------------------------------------------------
-
+                    # Robust Verification
                     if is_action_verified(
                         action_result
                     ):
@@ -3681,10 +3599,7 @@ elif page == "Live Demo":
                         "No action result returned."
                     )
 
-            # ------------------------------------------------
-            # CASE
-            # ------------------------------------------------
-
+            # Case
             if case:
 
                 st.divider()
@@ -3723,10 +3638,7 @@ elif page == "Live Demo":
                     )
                 )
 
-            # ------------------------------------------------
-            # TRANSACTION CONTEXT
-            # ------------------------------------------------
-
+            # Transaction Context
             st.divider()
 
             st.subheader(
@@ -3816,11 +3728,7 @@ elif page == "Live Demo":
                 use_container_width=True,
                 hide_index=True,
             )
-
-            # ------------------------------------------------
-            # RAW RESPONSE
-            # ------------------------------------------------
-
+            # Raw Response 
             with st.expander(
                 "🔍 View Complete Backend JSON"
             ):
@@ -3831,10 +3739,7 @@ elif page == "Live Demo":
 
             clear_data_cache()
 
-
-# ============================================================
 # FOOTER
-# ============================================================
 
 st.divider()
 

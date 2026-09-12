@@ -5,11 +5,7 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
-
-# --------------------------------------------------
 # Configuration
-# --------------------------------------------------
-
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -45,11 +41,7 @@ MERCHANTS = [
     "MERCHANT005",
 ]
 
-
-# --------------------------------------------------
 # Helper functions
-# --------------------------------------------------
-
 def generate_normal_transaction(user_id, transaction_time):
     """
     Generate a realistic normal payment transaction.
@@ -96,10 +88,6 @@ def generate_normal_transaction(user_id, transaction_time):
 def generate_suspicious_transaction(user_id, transaction_time):
     """
     Generate a suspicious payment pattern.
-
-    Different suspicious patterns are intentionally generated
-    so the ML model and investigation agent have multiple
-    scenarios to detect.
     """
 
     pattern = random.choice([
@@ -120,20 +108,14 @@ def generate_suspicious_transaction(user_id, transaction_time):
 
     risk_reason = ""
 
-    # ----------------------------------------------
     # Pattern 1: High transaction velocity
-    # ----------------------------------------------
-
     if pattern == "velocity":
 
         user_txn_count_1h = random.randint(5, 15)
 
         risk_reason = "HIGH_VELOCITY"
 
-    # ----------------------------------------------
     # Pattern 2: Repeated payment failures
-    # ----------------------------------------------
-
     elif pattern == "failed_attempts":
 
         failed_attempts = random.randint(3, 7)
@@ -142,20 +124,14 @@ def generate_suspicious_transaction(user_id, transaction_time):
 
         risk_reason = "REPEATED_FAILURES"
 
-    # ----------------------------------------------
     # Pattern 3: Unusually high amount
-    # ----------------------------------------------
-
     elif pattern == "high_amount":
 
         amount = round(random.uniform(5000, 25000), 2)
 
         risk_reason = "HIGH_AMOUNT"
 
-    # ----------------------------------------------
     # Pattern 4: New account activity
-    # ----------------------------------------------
-
     elif pattern == "new_account":
 
         account_age_days = random.randint(1, 20)
@@ -164,10 +140,7 @@ def generate_suspicious_transaction(user_id, transaction_time):
 
         risk_reason = "NEW_ACCOUNT"
 
-    # ----------------------------------------------
     # Pattern 5: Multiple risk signals
-    # ----------------------------------------------
-
     else:
 
         amount = round(random.uniform(8000, 25000), 2)
@@ -216,11 +189,7 @@ def generate_suspicious_transaction(user_id, transaction_time):
         "risk_reason": risk_reason,
     }
 
-
-# --------------------------------------------------
 # Generate transactions
-# --------------------------------------------------
-
 def generate_transactions(total_transactions):
     """
     Generate the complete synthetic transaction dataset.
@@ -241,10 +210,7 @@ def generate_transactions(total_transactions):
 
     base_time = datetime.now() - timedelta(days=30)
 
-    # ----------------------------------------------
     # Normal transactions
-    # ----------------------------------------------
-
     for _ in range(normal_count):
 
         user_id = random.randint(1, 80)
@@ -266,10 +232,7 @@ def generate_transactions(total_transactions):
 
         transactions.append(transaction)
 
-    # ----------------------------------------------
     # Suspicious transactions
-    # ----------------------------------------------
-
     for _ in range(suspicious_count):
 
         user_id = random.randint(1, 80)
@@ -298,11 +261,7 @@ def generate_transactions(total_transactions):
 
     return transactions
 
-
-# --------------------------------------------------
 # Insert into PostgreSQL
-# --------------------------------------------------
-
 def insert_transactions(transactions):
     """
     Insert generated transactions into PostgreSQL.
@@ -439,11 +398,7 @@ def insert_transactions(transactions):
 
     return rows
 
-
-# --------------------------------------------------
 # Verification
-# --------------------------------------------------
-
 def verify_database():
     """
     Verify that transactions were inserted correctly.
@@ -516,11 +471,7 @@ def verify_database():
             f"reason={row['risk_reason']}"
         )
 
-
-# --------------------------------------------------
 # Main
-# --------------------------------------------------
-
 def main():
 
     random.seed(RANDOM_SEED)

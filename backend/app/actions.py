@@ -2,21 +2,14 @@ from sqlalchemy import text
 
 from .database import engine
 
-
-# ============================================================
-# Allowed Actions
-# ============================================================
-
+# ALLOWED ACTIONS 
 ALLOWED_ACTIONS = {
     "ALLOW",
     "REVIEW_TRANSACTION",
     "BLOCK_TRANSACTION"
 }
 
-
-# ============================================================
-# Map Action → Expected Transaction Status
-# ============================================================
+# MAP ACTION → EXPECTED TRANSACTION STATUS
 
 EXPECTED_STATUS = {
     "ALLOW": "SUCCESS",
@@ -24,11 +17,7 @@ EXPECTED_STATUS = {
     "BLOCK_TRANSACTION": "BLOCKED"
 }
 
-
-# ============================================================
-# Execute + Verify Transaction Action
-# ============================================================
-
+# EXECUTE + VERIFY TRANSACTION ACTION
 def apply_transaction_action(
     transaction_id: str,
     action: str
@@ -38,10 +27,7 @@ def apply_transaction_action(
     that the expected database state was reached.
     """
 
-    # --------------------------------------------------------
     # 1. Validate action
-    # --------------------------------------------------------
-
     if action not in ALLOWED_ACTIONS:
 
         raise ValueError(
@@ -50,10 +36,7 @@ def apply_transaction_action(
 
     expected_status = EXPECTED_STATUS[action]
 
-    # --------------------------------------------------------
     # 2. Execute action
-    # --------------------------------------------------------
-
     update_query = text("""
         UPDATE transactions
         SET status = :status
@@ -73,10 +56,7 @@ def apply_transaction_action(
             }
         ).mappings().first()
 
-    # --------------------------------------------------------
     # 3. Transaction not found
-    # --------------------------------------------------------
-
     if not result:
 
         raise ValueError(
@@ -85,10 +65,7 @@ def apply_transaction_action(
 
     executed_status = result["status"]
 
-    # --------------------------------------------------------
     # 4. Independently verify database state
-    # --------------------------------------------------------
-
     verification_query = text("""
         SELECT
             transaction_id,
@@ -106,10 +83,7 @@ def apply_transaction_action(
             }
         ).mappings().first()
 
-    # --------------------------------------------------------
     # 5. Verification failed
-    # --------------------------------------------------------
-
     if not verification:
 
         return {
@@ -127,10 +101,7 @@ def apply_transaction_action(
 
     actual_status = verification["status"]
 
-    # --------------------------------------------------------
     # 6. Compare expected vs actual state
-    # --------------------------------------------------------
-
     verified = (
         actual_status == expected_status
     )
@@ -150,10 +121,7 @@ def apply_transaction_action(
             )
         }
 
-    # --------------------------------------------------------
     # 7. Unexpected state
-    # --------------------------------------------------------
-
     return {
         "transaction_id": transaction_id,
         "action": action,
@@ -168,21 +136,14 @@ def apply_transaction_action(
         )
     }
 
-
-# ============================================================
-# Manual Tests
-# ============================================================
-
+# MANUAL TESTING 
 if __name__ == "__main__":
 
     print("\n" + "=" * 70)
     print("ACTION EXECUTION + VERIFICATION TEST")
     print("=" * 70)
 
-    # --------------------------------------------------------
     # Test transaction
-    # --------------------------------------------------------
-
     transaction_id = "TXN00504"
 
     result = apply_transaction_action(

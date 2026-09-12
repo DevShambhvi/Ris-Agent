@@ -21,11 +21,7 @@ app = FastAPI(
     version="0.1.0"
 )
 
-
-# ============================================================
 # REQUEST MODELS
-# ============================================================
-
 class ActionRequest(BaseModel):
     action: str
 
@@ -49,11 +45,7 @@ class TransactionCreate(BaseModel):
     hour: int
     user_txn_count_1h: int = 0
 
-
-# ============================================================
 # BASIC ROUTES
-# ============================================================
-
 @app.get("/")
 def root():
     return {
@@ -75,11 +67,7 @@ def model_health():
         "status": "ready"
     }
 
-
-# ============================================================
 # USER MANAGEMENT
-# ============================================================
-
 @app.post("/users")
 def create_user(user: UserCreate):
 
@@ -193,18 +181,11 @@ def get_user(user_id: int):
         "user": dict(result)
     }
 
-
-# ============================================================
 # CREATE TRANSACTION
-# ============================================================
-
 @app.post("/transactions")
 def create_transaction(transaction: TransactionCreate):
 
-    # --------------------------------------------------------
     # Validate user
-    # --------------------------------------------------------
-
     user_query = text("""
         SELECT
             id,
@@ -233,10 +214,7 @@ def create_transaction(transaction: TransactionCreate):
 
     user_data = dict(user_result)
 
-    # --------------------------------------------------------
     # Insert transaction
-    # --------------------------------------------------------
-
     insert_query = text("""
         INSERT INTO transactions (
             transaction_id,
@@ -295,10 +273,7 @@ def create_transaction(transaction: TransactionCreate):
 
     with engine.begin() as connection:
 
-        # ----------------------------------------------------
         # Generate transaction ID
-        # ----------------------------------------------------
-
         next_id = connection.execute(
             text("""
                 SELECT
@@ -335,10 +310,7 @@ def create_transaction(transaction: TransactionCreate):
 
     transaction_data = dict(result)
 
-    # --------------------------------------------------------
     # Run ML Risk Detector
-    # --------------------------------------------------------
-
     try:
 
         risk_assessment = process_transaction(
@@ -352,10 +324,7 @@ def create_transaction(transaction: TransactionCreate):
             detail=f"ML risk assessment failed: {str(error)}"
         )
 
-    # --------------------------------------------------------
     # Run AI Investigation
-    # --------------------------------------------------------
-
     try:
 
         investigation_result = investigate(
@@ -369,10 +338,7 @@ def create_transaction(transaction: TransactionCreate):
             detail=f"AI investigation failed: {str(error)}"
         )
 
-    # --------------------------------------------------------
     # Extract agent pipeline results
-    # --------------------------------------------------------
-
     investigation = investigation_result.get(
         "investigation",
         {}
@@ -390,10 +356,8 @@ def create_transaction(transaction: TransactionCreate):
         "action_result"
     )
 
-    # --------------------------------------------------------
-    # FINAL API RESPONSE
-    # --------------------------------------------------------
-
+    
+    # Final API Response
     return {
         "success": True,
 
@@ -412,11 +376,7 @@ def create_transaction(transaction: TransactionCreate):
         "action_result": action_result
     }
 
-
-# ============================================================
 # GET TRANSACTION
-# ============================================================
-
 @app.get("/transactions/{transaction_id}")
 def get_transaction(transaction_id: str):
 
@@ -481,18 +441,12 @@ def get_transaction(transaction_id: str):
         "transaction": dict(result)
     }
 
-
-# ============================================================
 # GET TRANSACTION INVESTIGATION
-# ============================================================
 
 @app.get("/transactions/{transaction_id}/investigation")
 def get_transaction_investigation(transaction_id: str):
 
-    # --------------------------------------------------------
     # Get transaction + latest ML risk assessment
-    # --------------------------------------------------------
-
     transaction_query = text("""
         SELECT
             t.id,
@@ -552,10 +506,7 @@ def get_transaction_investigation(transaction_id: str):
 
     transaction_data = dict(transaction_result)
 
-    # --------------------------------------------------------
     # Get latest AI investigation audit event
-    # --------------------------------------------------------
-
     investigation_query = text("""
         SELECT
             action,
@@ -568,10 +519,7 @@ def get_transaction_investigation(transaction_id: str):
         LIMIT 1
     """)
 
-    # --------------------------------------------------------
     # Get latest policy decision
-    # --------------------------------------------------------
-
     policy_query = text("""
         SELECT
             action,
@@ -584,10 +532,7 @@ def get_transaction_investigation(transaction_id: str):
         LIMIT 1
     """)
 
-    # --------------------------------------------------------
     # Get latest backend action
-    # --------------------------------------------------------
-
     action_query = text("""
         SELECT
             action,
@@ -627,10 +572,8 @@ def get_transaction_investigation(transaction_id: str):
             }
         ).mappings().first()
 
-    # --------------------------------------------------------
     # Build investigation response
-    # --------------------------------------------------------
-
+    
     investigation = {}
 
     if investigation_result:
@@ -671,18 +614,12 @@ def get_transaction_investigation(transaction_id: str):
             action_result["created_at"]
         )
 
-    # --------------------------------------------------------
     # Get case
-    # --------------------------------------------------------
-
     case = get_transaction_case(
         transaction_id
     )
 
-    # --------------------------------------------------------
     # Return complete investigation state
-    # --------------------------------------------------------
-
     return {
         "success": True,
         "transaction": transaction_data,
@@ -692,11 +629,7 @@ def get_transaction_investigation(transaction_id: str):
         "case": case
     }
 
-
-# ============================================================
 # EXECUTE TRANSACTION ACTION
-# ============================================================
-
 @app.post("/transactions/{transaction_id}/action")
 def execute_action(
     transaction_id: str,
@@ -731,11 +664,7 @@ def execute_action(
             detail=error_message
         )
 
-
-# ============================================================
 # CASE MANAGEMENT
-# ============================================================
-
 @app.get("/cases/{case_id}")
 def get_case_endpoint(case_id: int):
 
@@ -797,11 +726,7 @@ def resolve_case_endpoint(case_id: int):
             detail=str(error)
         )
 
-
-# ============================================================
 # AUDIT TRAIL
-# ============================================================
-
 @app.get("/cases/{case_id}/audit")
 def get_case_audit(case_id: int):
 
@@ -824,10 +749,7 @@ def get_case_audit(case_id: int):
         "audit_logs": logs
     }
 
-
-# ============================================================
 # DASHBOARD SUMMARY
-# ============================================================
 
 @app.get("/dashboard/summary")
 def dashboard_summary():
@@ -867,10 +789,7 @@ def dashboard_summary():
         "summary": dict(result)
     }
 
-
-# ============================================================
 # RISK DISTRIBUTION
-# ============================================================
 
 @app.get("/dashboard/risk-distribution")
 def risk_distribution():
@@ -898,11 +817,7 @@ def risk_distribution():
         ]
     }
 
-
-# ============================================================
 # RECENT RISK EVENTS
-# ============================================================
-
 @app.get("/dashboard/recent-risk")
 def recent_risk():
 
@@ -951,11 +866,7 @@ def recent_risk():
         ]
     }
 
-
-# ============================================================
 # DASHBOARD CASES
-# ============================================================
-
 @app.get("/dashboard/cases")
 def dashboard_cases():
 
@@ -990,11 +901,7 @@ def dashboard_cases():
         ]
     }
 
-
-# ============================================================
 # DASHBOARD STATISTICS
-# ============================================================
-
 @app.get("/dashboard/statistics")
 def dashboard_statistics():
 
@@ -1041,11 +948,7 @@ def dashboard_statistics():
         "statistics": dict(result)
     }
 
-
-# ============================================================
 # DASHBOARD AUDIT
-# ============================================================
-
 @app.get("/dashboard/audit")
 def dashboard_audit():
 
@@ -1076,11 +979,7 @@ def dashboard_audit():
         ]
     }
 
-
-# ============================================================
 # DASHBOARD TRANSACTIONS
-# ============================================================
-
 @app.get("/dashboard/transactions")
 def dashboard_transactions():
 
