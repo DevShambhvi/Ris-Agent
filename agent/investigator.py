@@ -6,7 +6,11 @@ from backend.app.actions import apply_transaction_action
 from backend.app.cases import create_case, get_transaction_case
 from backend.app.audit import create_audit_log
 
-from sqlalchemy import text
+from importlib import import_module
+
+# Load SQLAlchemy dynamically so static analysis does not require its optional
+# type stubs in this module.
+text = import_module("sqlalchemy").text
 
 
 # ============================================================

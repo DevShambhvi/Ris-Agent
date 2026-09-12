@@ -3,6 +3,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import streamlit as st
+from datetime import datetime
 
 
 # ============================================================
@@ -294,7 +295,7 @@ def human_details(details):
 
 
 # ============================================================
-# INVESTIGATION RESPONSE HELPERS
+# RESPONSE SAFETY HELPERS
 # ============================================================
 
 def normalize_investigation(data):
@@ -424,6 +425,49 @@ def get_transaction_result(result):
         return transaction
 
     return {}
+
+
+def get_actual_status(action_result, transaction=None):
+
+    if not isinstance(action_result, dict):
+        action_result = {}
+
+    if not isinstance(transaction, dict):
+        transaction = {}
+
+    return action_result.get(
+        "status",
+        action_result.get(
+            "actual_status",
+            transaction.get(
+                "status",
+                "—",
+            ),
+        ),
+    )
+
+
+def is_action_verified(action_result):
+
+    if not isinstance(action_result, dict):
+        return False
+
+    verified = action_result.get(
+        "verified",
+        False,
+    )
+
+    verification_status = str(
+        action_result.get(
+            "verification_status",
+            "",
+        )
+    ).upper()
+
+    return (
+        verified is True
+        or verification_status == "VERIFIED"
+    )
 
 
 # ============================================================
@@ -1621,6 +1665,9 @@ elif page == "Transactions":
         transaction,
     )
 
+    if not isinstance(tx, dict):
+        tx = {}
+
     risk = transaction.get(
         "risk_assessment",
         transaction.get(
@@ -1628,6 +1675,9 @@ elif page == "Transactions":
             {},
         ),
     )
+
+    if not isinstance(risk, dict):
+        risk = {}
 
     st.divider()
 
@@ -1859,9 +1909,8 @@ elif page == "Transactions":
 
             else:
 
-                if result.get(
-                    "verified",
-                    False,
+                if is_action_verified(
+                    result
                 ):
 
                     st.success(
@@ -1916,6 +1965,14 @@ elif page == "Investigations":
 
         investigation_df = transactions_df
 
+    if "transaction_id" not in investigation_df.columns:
+
+        st.error(
+            "Transaction IDs are not available."
+        )
+
+        st.stop()
+
     ids = (
         investigation_df[
             "transaction_id"
@@ -1924,16 +1981,18 @@ elif page == "Investigations":
         .tolist()
     )
 
+    if not ids:
+
+        st.info(
+            "No transactions available for investigation."
+        )
+
+        st.stop()
+
     selected_id = st.selectbox(
         "Select transaction",
         ids,
     )
-
-    # ========================================================
-    # IMPORTANT:
-    # Use the REAL investigation endpoint.
-    # Do not recreate agent logic inside the dashboard.
-    # ========================================================
 
     investigation_result = get_investigation(
         selected_id
@@ -1947,10 +2006,6 @@ elif page == "Investigations":
         )
 
         st.stop()
-
-    # --------------------------------------------------------
-    # Parse backend response
-    # --------------------------------------------------------
 
     tx = get_transaction_result(
         investigation_result
@@ -1972,10 +2027,6 @@ elif page == "Investigations":
         investigation_result
     )
 
-    # --------------------------------------------------------
-    # Fallback transaction information
-    # --------------------------------------------------------
-
     if not tx:
 
         tx_data = get_transaction(
@@ -1988,6 +2039,9 @@ elif page == "Investigations":
                 "transaction",
                 tx_data,
             )
+
+    if not isinstance(tx, dict):
+        tx = {}
 
     score = safe_float(
         investigation.get(
@@ -2015,10 +2069,6 @@ elif page == "Investigations":
         ),
     )
 
-    # ========================================================
-    # TOP METRICS
-    # ========================================================
-
     st.divider()
 
     a, b, c, d = st.columns(4)
@@ -2045,10 +2095,6 @@ elif page == "Investigations":
             recommendation
         ),
     )
-
-    # ========================================================
-    # PIPELINE
-    # ========================================================
 
     st.write("")
 
@@ -2105,10 +2151,6 @@ elif page == "Investigations":
             st.caption(
                 desc
             )
-
-    # ========================================================
-    # TRANSACTION CONTEXT + AGENT DECISION
-    # ========================================================
 
     st.divider()
 
@@ -2207,10 +2249,6 @@ elif page == "Investigations":
             "AI investigation service. The dashboard does "
             "not independently calculate the decision."
         )
-
-    # ========================================================
-    # ACTUAL EVIDENCE
-    # ========================================================
 
     st.divider()
 
@@ -2323,10 +2361,6 @@ elif page == "Investigations":
             "No risk evidence matched this transaction."
         )
 
-    # ========================================================
-    # RAG RETRIEVED RULES
-    # ========================================================
-
     st.divider()
 
     st.subheader(
@@ -2418,10 +2452,6 @@ elif page == "Investigations":
             "No retrieved RAG rules were returned."
         )
 
-    # ========================================================
-    # POLICY DECISION
-    # ========================================================
-
     st.divider()
 
     left, right = st.columns(
@@ -2439,13 +2469,13 @@ elif page == "Investigations":
             "—",
         )
 
-        if policy_result == "APPROVED":
+        if str(policy_result).upper() == "APPROVED":
 
             st.success(
                 f"✓ POLICY {policy_result}"
             )
 
-        elif policy_result == "REJECTED":
+        elif str(policy_result).upper() == "REJECTED":
 
             st.error(
                 f"✗ POLICY {policy_result}"
@@ -2493,15 +2523,14 @@ elif page == "Investigations":
 
                 st.metric(
                     "RESULT",
-                    action_result.get(
-                        "status",
-                        "—",
+                    get_actual_status(
+                        action_result,
+                        tx,
                     ),
                 )
 
-            if action_result.get(
-                "verified",
-                False,
+            if is_action_verified(
+                action_result
             ):
 
                 st.success(
@@ -2529,10 +2558,6 @@ elif page == "Investigations":
             st.warning(
                 "No action result returned."
             )
-
-    # ========================================================
-    # CASE
-    # ========================================================
 
     if case:
 
@@ -2571,10 +2596,6 @@ elif page == "Investigations":
                 "No investigation summary available.",
             )
         )
-
-    # ========================================================
-    # INVESTIGATION AUDIT ACTIVITY
-    # ========================================================
 
     st.divider()
 
@@ -2652,10 +2673,6 @@ elif page == "Investigations":
         st.info(
             "No audit data available."
         )
-
-    # ========================================================
-    # RAW INVESTIGATION JSON
-    # ========================================================
 
     with st.expander(
         "🔍 View Complete Investigation JSON"
@@ -2949,7 +2966,10 @@ elif page == "Audit Trail":
         )
 
 
+# ============================================================
 # LIVE DEMO
+# ============================================================
+
 elif page == "Live Demo":
 
     st.subheader(
@@ -2966,7 +2986,10 @@ elif page == "Live Demo":
         "Use it for the buildathon demo."
     )
 
+    # --------------------------------------------------------
     # USER SELECTION
+    # --------------------------------------------------------
+
     if users_df.empty:
 
         st.error(
@@ -2984,14 +3007,19 @@ elif page == "Live Demo":
 
         st.stop()
 
-    user_options = (
-        users_df[
-            "id"
-        ]
-        .dropna()
-        .astype(int)
-        .tolist()
-    )
+    user_options = []
+
+    for _, row in users_df.iterrows():
+
+        try:
+
+            user_options.append(
+                int(row["id"])
+            )
+
+        except Exception:
+
+            continue
 
     if not user_options:
 
@@ -3121,10 +3149,11 @@ elif page == "Live Demo":
             use_container_width=True,
         )
 
-    # Execute pipeline
-    if submitted:
+    # --------------------------------------------------------
+    # EXECUTE PIPELINE
+    # --------------------------------------------------------
 
-        from datetime import datetime
+    if submitted:
 
         timestamp = datetime.now()
 
@@ -3172,9 +3201,20 @@ elif page == "Live Demo":
 
         else:
 
+            # ------------------------------------------------
+            # BACKEND RESPONSE
+            # ------------------------------------------------
+
             tx_result = get_transaction_result(
                 result
             )
+
+            if not isinstance(
+                tx_result,
+                dict,
+            ):
+
+                tx_result = {}
 
             risk_result = result.get(
                 "risk_assessment",
@@ -3207,6 +3247,10 @@ elif page == "Live Demo":
                 result
             )
 
+            # ------------------------------------------------
+            # FALLBACK RISK INFORMATION
+            # ------------------------------------------------
+
             if not risk_result:
 
                 risk_result = {
@@ -3238,6 +3282,10 @@ elif page == "Live Demo":
                 "Investigation completed for "
                 f"{actual_transaction_id}"
             )
+
+            # ------------------------------------------------
+            # TOP METRICS
+            # ------------------------------------------------
 
             st.divider()
 
@@ -3293,6 +3341,10 @@ elif page == "Live Demo":
                     recommendation
                 ),
             )
+
+            # ------------------------------------------------
+            # PIPELINE
+            # ------------------------------------------------
 
             st.write("")
 
@@ -3355,6 +3407,10 @@ elif page == "Live Demo":
                         desc
                     )
 
+            # ------------------------------------------------
+            # AGENT + POLICY
+            # ------------------------------------------------
+
             st.divider()
 
             left, right = st.columns(
@@ -3416,6 +3472,16 @@ elif page == "Live Demo":
                                         description
                                     )
 
+                                    severity = item.get(
+                                        "severity"
+                                    )
+
+                                    if severity:
+
+                                        st.caption(
+                                            f"Severity: {severity}"
+                                        )
+
                             else:
 
                                 st.write(
@@ -3434,6 +3500,78 @@ elif page == "Live Demo":
                         "The backend did not return a detailed evidence list."
                     )
 
+                # ------------------------------------------------
+                # RAG RULES
+                # ------------------------------------------------
+
+                retrieved_rules = investigation.get(
+                    "retrieved_rules",
+                    [],
+                )
+
+                if retrieved_rules:
+
+                    st.write("")
+
+                    with st.expander(
+                        "RAG Retrieved Candidates"
+                    ):
+
+                        if isinstance(
+                            retrieved_rules,
+                            list,
+                        ):
+
+                            rag_rows = []
+
+                            for rule in retrieved_rules:
+
+                                if isinstance(
+                                    rule,
+                                    dict,
+                                ):
+
+                                    rag_rows.append(
+                                        {
+                                            "Rule": rule.get(
+                                                "id",
+                                                "—",
+                                            ),
+                                            "Title": rule.get(
+                                                "title",
+                                                "—",
+                                            ),
+                                            "Severity": rule.get(
+                                                "severity",
+                                                "—",
+                                            ),
+                                        }
+                                    )
+
+                            if rag_rows:
+
+                                st.dataframe(
+                                    make_display_safe(
+                                        pd.DataFrame(
+                                            rag_rows
+                                        )
+                                    ),
+                                    use_container_width=True,
+                                    hide_index=True,
+                                )
+
+                            else:
+
+                                st.write(
+                                    retrieved_rules
+                                )
+
+                        else:
+
+                            st.write(
+                                retrieved_rules
+                            )
+
             with right:
 
                 st.subheader(
@@ -3445,13 +3583,17 @@ elif page == "Live Demo":
                     "—",
                 )
 
-                if policy_result == "APPROVED":
+                if str(
+                    policy_result
+                ).upper() == "APPROVED":
 
                     st.success(
                         f"Policy: {policy_result}"
                     )
 
-                elif policy_result == "REJECTED":
+                elif str(
+                    policy_result
+                ).upper() == "REJECTED":
 
                     st.error(
                         f"Policy: {policy_result}"
@@ -3499,15 +3641,18 @@ elif page == "Live Demo":
 
                         st.metric(
                             "RESULT",
-                            action_result.get(
-                                "status",
-                                "—",
+                            get_actual_status(
+                                action_result,
+                                tx_result,
                             ),
                         )
 
-                    if action_result.get(
-                        "verified",
-                        False,
+                    # ------------------------------------------------
+                    # ROBUST VERIFICATION
+                    # ------------------------------------------------
+
+                    if is_action_verified(
+                        action_result
                     ):
 
                         st.success(
@@ -3535,6 +3680,10 @@ elif page == "Live Demo":
                     st.warning(
                         "No action result returned."
                     )
+
+            # ------------------------------------------------
+            # CASE
+            # ------------------------------------------------
 
             if case:
 
@@ -3573,6 +3722,10 @@ elif page == "Live Demo":
                         "No investigation summary available.",
                     )
                 )
+
+            # ------------------------------------------------
+            # TRANSACTION CONTEXT
+            # ------------------------------------------------
 
             st.divider()
 
@@ -3634,12 +3787,9 @@ elif page == "Live Demo":
                 ),
                 (
                     "Final status",
-                    action_result.get(
-                        "status",
-                        tx_result.get(
-                            "status",
-                            "—",
-                        ),
+                    get_actual_status(
+                        action_result,
+                        tx_result,
                     ),
                 ),
             ]
@@ -3667,6 +3817,10 @@ elif page == "Live Demo":
                 hide_index=True,
             )
 
+            # ------------------------------------------------
+            # RAW RESPONSE
+            # ------------------------------------------------
+
             with st.expander(
                 "🔍 View Complete Backend JSON"
             ):
@@ -3678,7 +3832,10 @@ elif page == "Live Demo":
             clear_data_cache()
 
 
+# ============================================================
 # FOOTER
+# ============================================================
+
 st.divider()
 
 st.caption(
