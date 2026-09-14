@@ -533,8 +533,6 @@ Project:
 
 RIS-Agent — AI Risk Investigation System
 
-Built for the Razorpay Buildathon 2026.
-
 ML → Detect
 RAG → Retrieve
 Agent → Investigate
